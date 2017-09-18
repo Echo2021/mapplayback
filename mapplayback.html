@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+<title>Examples</title>
+<meta name="description" content="">
+<meta name="keywords" content="">
+ <meta name="viewport" content="initial-scale=1.0, user-scalable=no, width=device-width">
+<link href="" rel="stylesheet">
+<style type="text/css">
+	html,body {
+		height:100%;
+		overflow:hidden;
+		
+	}
+	body {
+		margin-bottom:30px;
+		padding:0;
+		
+	}
+	.all{
+		margin: 0 0 0 200px;
+		height:100%;
+		
+	}
+	.control-list {
+		width: 200px;
+		height: 100%;
+		background-color: #eee;
+		position: absolute;
+		top:0;
+		left:0;
+
+	}
+	.control-list ul {}
+	.control-list ul li {
+		list-style:none;
+		padding:10px;
+		height:14px;
+		line-height:14px;
+		cursor:pointer;
+	}
+	.time { 
+		width:100%;
+		height: 10%;
+		line-height:50px;
+		background-color: rgb(174,221,129);
+		
+	 }
+	 .date {
+	 	margin-left:100px;
+	 }
+	
+	.info {
+		position:absolute;
+		top:35px;
+		left:350px;
+
+		font-size:12px;
+		
+	}
+	#speed {
+		vertical-align:middle;
+		width:60px;
+		height:23px;
+
+	}
+
+	.container {
+		width:100%;
+		height:90%;
+		background:#ccc;
+		
+	}
+	#mapcontainer {
+		height:100%;
+		
+	}
+	#tip {
+			position: absolute;
+			top: 70px;
+			right:30px;
+			padding:0 5px;
+			border-radius:3px;
+			border: 1px solid #000;
+			background:rgba(0,160,220,0.4);
+			
+			line-height:16px;
+		}
+		#tip input[type=text]{
+			border:none;
+			background:#fff;
+		}
+
+</style>
+<script src="lib/date/WdatePicker.js"></script>
+</head>
+<body>
+<div class="all">
+    <div class="control-list">
+    	<ul>
+    		<li onclick="toggle()">功能控件</li>
+    		<li id="play" onclick="track()">轨迹</li>
+    	
+    	</ul>
+    </div>
+    <div class="time">
+    	<div class="date">
+	    	从<input type="text" id="startTime" class="Wdate" onFocus="WdatePicker({lang:'zh-cn',dateFmt:'yyyy-MM-dd HH:mm:ss'})">
+			到<input type="text" id="endTime" class="Wdate" onFocus="WdatePicker({lang:'zh-cn',dateFmt:'yyyy-MM-dd HH:mm:ss'})">
+			<span class="info">请输入2016-12-20 06:00:00到2016-12-20 09:00:00</span>
+			<select name="select" id="speed">
+				<option value="10000">慢</option>
+				<option value="40000">一般</option>
+				<option value="500000">快</option>
+			</select>
+			<button type="button" id="start" value="开始"  >开始运动</button>
+			<button type="button" id="pause" value="暂停" >暂停运动</button>
+			<button type="button" id="resume" value="继续" >继续运动</button>
+			<button type="button" id="stop" value="停止" >停止运动</button>
+		</div>
+		
+    </div>
+   <div class="container">
+   		<div id="mapcontainer"></div>
+   		<div id="tip">
+			<input type="text" id="keyword" name="keyword" value="请输入关键字" onfocus="this.value=''">
+		</div>
+   </div>
+ </div>
+<script type="text/javascript" src="https://webapi.amap.com/maps?v=1.3&key=key值&&plugin=AMap.Scale,AMap.OverView,AMap.ToolBar"></script>
+<script type="text/javascript" src="https://webapi.amap.com/demos/js/liteToolbar.js"></script>
+<script src="//webapi.amap.com/ui/1.0/main.js"></script>
+ <script src="lib/jquery-1.10.1.min.js"></script>
+<script type="text/javascript">
+    var speed = document.getElementById('speed');
+	var start = document.getElementById('start');
+	var pause = document.getElementById('pause');
+	var resume = document.getElementById('resume');
+	var stop = document.getElementById('stop');
+
+	var st = document.getElementById('startTime');
+	var et = document.getElementById('endTime');
+	var pla = document.getElementById('play');
+
+	var json = {
+		"name":"张三",
+		"track": [
+			{
+				"lngX":"87.616842",
+				"latY":"43.82539 ",
+				"address":"乌鲁市",
+				"dTime": "2016-12-20 06:00"
+			},
+			{
+				"lngX":"91.171961",
+				"latY":"29.653482",
+				"address":"拉萨市",
+				"dTime":"2016-12-20 06:30"			
+			},
+			{
+                "lngX": "104.066143",
+                "latY": "30.573095",
+                "address": "成都市",
+                "dTime": "2016-12-20 07:00"
+            },
+            {
+                "lngX": "113.264385",
+                "latY": "23.129112",
+                "address": "广州市",
+                "dTime": "2016-12-20 07:30"
+            },
+            {
+                "lngX": "121.473658",
+                "latY": "31.230378",
+                "address": "上海市",
+                "dTime": "2016-12-20 08:00"
+            },
+            {
+                "lngX": "112.938888",
+                "latY": "28.228272",
+                "address": "长沙市",
+                "dTime": "2016-12-20 08:30"
+            },
+            {
+                "lngX": "113.658075",
+                "latY": "34.745793",
+                "address": "郑州市",
+                "dTime": "2016-12-20 09:00"
+            }
+		]
+	};
+	var marker;
+	var lineArr=[];
+	var lngX="";
+	var latY ="";
+	var tra =[];
+	var map =new AMap.Map('mapcontainer',{
+		resizeEnable: true,
+		zoom:7,
+		center: [116.397428, 39.90923],
+		keyboardEnable: false
+	});
+	var windowsArr =[];
+	var marker =[];
+
+	AMap.plugin(['AMap.Autocomplete','AMap.PlaceSearch'],function(){
+      	var autoOptions = {
+        city: "北京", 
+        input: "keyword"
+      };
+      //搜索提示
+      autocomplete= new AMap.Autocomplete(autoOptions);
+      var placeSearch = new AMap.PlaceSearch({
+      	city: "北京",
+      	map: map
+      });
+
+      AMap.event.addListener(autocomplete,"select",function(e){
+      	placeSearch.search(e.poi.name);
+      });
+  });
+
+	var tool = new AMap.ToolBar({
+		visible: false
+	});
+	var scale = new AMap.Scale({
+		visible:false
+	});
+	var overView = new AMap.OverView({
+		visible: false
+	});
+	map.addControl(tool);
+	map.addControl(scale);
+	map.addControl(overView);
+	var flag=true;
+	function toggle() {
+		if(flag){
+			tool.show();
+			scale.show();
+			overView.show();
+			flag=false;
+		}else {
+			tool.hide();
+			scale.hide();
+			overView.hide();
+			flag=true;
+		}
+		
+	}
+
+
+
+   function track(){
+	 	//先清楚线路及地图覆盖物
+	 	lineArr =[];
+	 	map.clearMap();
+	 	//console.log(st.value,et.value);
+	 	//console.log(typeof st.value);
+	 for(var i=0;i<json.track.length;i++){
+	 	var dt = json.track[i].dTime;
+	 	if(diff(dt,st.value)>=0&&diff(dt,et.value)<=0){
+	 		
+	 		lngX = json.track[i].lngX;
+	 		latY = json.track[i].latY;
+	 		lineArr.push([lngX,latY]);
+	 		tra.push(json.track[i]);
+	 	}
+	   }
+	  // console.log(lineArr);
+
+AMapUI.load(['ui/misc/PathSimplifier'], function(PathSimplifier) {
+
+    if (!PathSimplifier.supportCanvas) {
+         alert('当前环境不支持 Canvas！');
+         return;
+     }
+
+var defaultRenderOptions = {
+			pathNavigatorStyle: {
+				width:16,
+				height:16,
+				autoRotate:true,
+				lineJoin:'round',
+				content:'defaultPathNavigtor',
+				fillStyle:'#087EC4',
+				strokeStyle:'#116394',
+				lineWidth:1,
+				pathLinePassedStyle: {
+					lineWidth:2,
+					strokeStyle:'rgba(0, 160, 220, 0.8)',
+					borderWidth:1,
+					borderStyle:'#eee',
+					dirArrowStyle:false
+				}
+			}
+		};
+
+    var pathSimplifierIns = new PathSimplifier({
+        zIndex: 100,
+        map: map, 
+        getPath: function(pathData, pathIndex) {
+            return pathData.path;
+        },
+        getHoverTitle: function(pathData, pathIndex, pointIndex) {
+            //返回鼠标悬停时显示的信息
+            if (pointIndex >= 0) {
+                //鼠标悬停在某个轨迹节点上
+                return pathData.name + '，点:' + pointIndex + '/' + pathData.path.length;
+            }
+            //鼠标悬停在节点之间的连线上
+            return pathData.name + '，点数量' + pathData.path.length;
+        },
+        renderOptions: defaultRenderOptions
+    });
+
+    window.pathSimplifierIns = pathSimplifierIns;
+
+    pathSimplifierIns.setData([{
+        name: '轨迹',
+        path: lineArr
+    }]);
+
+    var navg = pathSimplifierIns.createPathNavigator(0,{
+			loop: true,
+			speed: parseInt(speed.value),
+			pathNavigatorStyle: {
+				width:24,
+				height:24,
+				content: PathSimplifier.Render.Canvas.getImageContent('image/plane.png'),
+				strokeStyle:null,
+				fillStyle:null
+			}
+		});
+
+   	start.onclick =	function  (){
+    		navg.start();
+    	}
+		
+	pause.onclick =	function  (){
+			navg.pause();
+			//console.log(navg.getSpeed(),navg.getMovedDistance())
+			//console.log(navg.getPosition());
+			alert('当前为止走过的距离'+parseInt(navg.getMovedDistance()/1000)+'KM,回放速度为:'+parseInt(navg.getSpeed())+'Km/h');
+			
+		}
+
+	resume.onclick =	function (){
+			navg.resume();
+
+		}
+	stop.onclick =	function (){
+			navg.stop();
+			// map.clearMap();
+
+			
+		}
+	
+	console.log(navg.getNaviStatus());
+	
+		speed.onchange=function(){
+			var spe = speed.value;
+			navg.setSpeed(spe);
+			
+		};
+
+
+	var startPot = lineArr[0];
+		
+  	var endPot = lineArr[lineArr.length-1];
+  		
+	  var stmarker = new AMap.Marker({
+            map: map,
+            position: [startPot[0], startPot[1]], //基点位置
+            icon: "https://webapi.amap.com/theme/v1.3/markers/n/start.png",
+            zIndex: 10
+        });
+        var endmarker = new AMap.Marker({
+            map: map,
+            position: [endPot[0], endPot[1]], //基点位置
+            icon: "https://webapi.amap.com/theme/v1.3/markers/n/end.png",
+            zIndex: 10
+        });
+
+});
+
+	
+
+
+}
+		
+
+ 	function stringToTime(string){
+   		var s = string.split(' ',2);
+   		var d = (s[0]?s[0]:'').split('-',3);
+   		var t = (s[1]?s[1]:'').split(':',3);
+   		
+   		//转化为时间
+   		return (new Date(parseInt(d[0],10)||null,(parseInt(d[1],10)-1)||1,parseInt(d[2],10)||null,parseInt(t[0],10)||null,parseInt(t[1],10)||null,parseInt(t[2],10)||null)).getTime();
+
+   }
+   function diff(date1,date2){
+   	 if( typeof date1 === 'string'){
+   	 		date1 = stringToTime(date1);
+   	 }else {
+   	 	date1 = date1.getTime();
+   	 }
+   	 if(typeof date2 ==='string'){
+   	 	date2 = stringToTime(date2);
+   	 }else {
+   	 	date2 = date2.getTime();
+   	 }
+   	 //返回差值，单位秒
+   	 return (date1-date2)/1000;
+   }
+
+	 
+
+</script>
+</body>
+</html>
